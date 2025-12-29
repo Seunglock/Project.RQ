@@ -1,7 +1,7 @@
 ﻿<Solution>
+  <Project Path="GuildReceptionist.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Installer.Tests.csproj" />
   <Project Path="GuildReceptionist.Tests.Editor.csproj" />
-  <Project Path="GuildReceptionist.csproj" />
   <Project Path="com.IvanMurzak.Unity.MCP.Installer.csproj" />
   <Project Path="GuildReceptionist.Tests.PlayMode.csproj" />
 </Solution>

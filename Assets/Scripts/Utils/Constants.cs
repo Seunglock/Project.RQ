@@ -42,6 +42,7 @@ namespace GuildReceptionist
 
         // Debt
         public const int DAYS_PER_QUARTER = 90;
+        public const float DEFAULT_INTEREST_RATE = 0.05f; // 5% annual rate
 
         // Save/Load
         public const string SAVE_FILE_NAME = "save.json";
