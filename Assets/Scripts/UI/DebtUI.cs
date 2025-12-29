@@ -1,5 +1,7 @@
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
+using TMPro;
+using System.Collections.Generic;
 
 namespace GuildReceptionist
 {
@@ -9,54 +11,60 @@ namespace GuildReceptionist
     /// </summary>
     public class DebtUI : MonoBehaviour
     {
-        [Header("UI Elements")]
-        [SerializeField] private UIDocument uiDocument;
+        [Header("Status UI Elements")]
+        [SerializeField] private TMP_Text currentBalanceLabel;
+        [SerializeField] private TMP_Text quarterlyPaymentLabel;
+        [SerializeField] private TMP_Text daysUntilPaymentLabel;
+        [SerializeField] private TMP_Text projectedBalanceLabel;
+        [SerializeField] private TMP_Text debtStateLabel;
+
+        [Header("Payment Input")]
+        [SerializeField] private TMP_InputField paymentAmountField;
+        [SerializeField] private Button manualPaymentButton;
+
+        [Header("Payment History")]
+        [SerializeField] private Transform paymentHistoryContainer;
+        [SerializeField] private GameObject paymentHistoryItemPrefab;
+        [SerializeField] private ScrollRect paymentHistoryScrollView;
 
         [Header("Settings")]
         [SerializeField] private bool autoRefresh = true;
         [SerializeField] private float refreshInterval = 1f;
 
-        private VisualElement root;
-        private Label currentBalanceLabel;
-        private Label quarterlyPaymentLabel;
-        private Label daysUntilPaymentLabel;
-        private Label projectedBalanceLabel;
-        private Label debtStateLabel;
-        private Button manualPaymentButton;
-        private TextField paymentAmountField;
-        private ScrollView paymentHistoryScrollView;
-        private VisualElement paymentHistoryContainer;
-
         private float refreshTimer = 0f;
 
-        private void Awake()
+        private void Start()
         {
-            if (uiDocument == null)
+            // Set up button handlers
+            if (manualPaymentButton != null)
             {
-                uiDocument = GetComponent<UIDocument>();
+                manualPaymentButton.onClick.AddListener(OnManualPaymentClicked);
             }
 
-            if (uiDocument != null)
-            {
-                InitializeUI();
-            }
+            RefreshUI();
         }
 
         private void OnEnable()
         {
             // Subscribe to debt events
-            EventSystem.Instance.Subscribe<DebtPaymentEvent>(OnDebtPayment);
-            EventSystem.Instance.Subscribe<DebtPaidOffEvent>(OnDebtPaidOff);
-            EventSystem.Instance.Subscribe<QuarterAdvancedEvent>(OnQuarterAdvanced);
+            if (EventSystem.Instance != null)
+            {
+                EventSystem.Instance.Subscribe<DebtPaymentEvent>(OnDebtPayment);
+                EventSystem.Instance.Subscribe<DebtPaidOffEvent>(OnDebtPaidOff);
+                EventSystem.Instance.Subscribe<QuarterAdvancedEvent>(OnQuarterAdvanced);
+            }
 
             RefreshUI();
         }
 
         private void OnDisable()
         {
-            EventSystem.Instance.Unsubscribe<DebtPaymentEvent>(OnDebtPayment);
-            EventSystem.Instance.Unsubscribe<DebtPaidOffEvent>(OnDebtPaidOff);
-            EventSystem.Instance.Unsubscribe<QuarterAdvancedEvent>(OnQuarterAdvanced);
+            if (EventSystem.Instance != null)
+            {
+                EventSystem.Instance.Unsubscribe<DebtPaymentEvent>(OnDebtPayment);
+                EventSystem.Instance.Unsubscribe<DebtPaidOffEvent>(OnDebtPaidOff);
+                EventSystem.Instance.Unsubscribe<QuarterAdvancedEvent>(OnQuarterAdvanced);
+            }
         }
 
         private void Update()
@@ -72,146 +80,11 @@ namespace GuildReceptionist
             }
         }
 
-        private void InitializeUI()
-        {
-            root = uiDocument.rootVisualElement;
-
-            // Create UI structure programmatically
-            CreateDebtUI();
-
-            // Set up button handlers
-            if (manualPaymentButton != null)
-            {
-                manualPaymentButton.clicked += OnManualPaymentClicked;
-            }
-        }
-
-        private void CreateDebtUI()
-        {
-            // Main container
-            var mainContainer = new VisualElement();
-            mainContainer.name = "debt-container";
-            mainContainer.style.paddingTop = new StyleLength(20);
-            mainContainer.style.paddingBottom = new StyleLength(20);
-            mainContainer.style.paddingLeft = new StyleLength(20);
-            mainContainer.style.paddingRight = new StyleLength(20);
-            mainContainer.style.backgroundColor = new StyleColor(new Color(0.1f, 0.1f, 0.1f, 0.9f));
-
-            // Title
-            var titleLabel = new Label("Debt Management");
-            titleLabel.style.fontSize = 24;
-            titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-            titleLabel.style.marginBottom = 20;
-            mainContainer.Add(titleLabel);
-
-            // Debt Status Section
-            var statusSection = CreateStatusSection();
-            mainContainer.Add(statusSection);
-
-            // Payment Input Section
-            var paymentSection = CreatePaymentSection();
-            mainContainer.Add(paymentSection);
-
-            // Payment History Section
-            var historySection = CreateHistorySection();
-            mainContainer.Add(historySection);
-
-            root.Add(mainContainer);
-        }
-
-        private VisualElement CreateStatusSection()
-        {
-            var section = new VisualElement();
-            section.name = "status-section";
-            section.style.marginBottom = 20;
-            section.style.paddingTop = new StyleLength(15);
-            section.style.paddingBottom = new StyleLength(15);
-            section.style.paddingLeft = new StyleLength(15);
-            section.style.paddingRight = new StyleLength(15);
-            section.style.backgroundColor = new StyleColor(new Color(0.15f, 0.15f, 0.15f, 1f));
-
-            var sectionTitle = new Label("Current Status");
-            sectionTitle.style.fontSize = 18;
-            sectionTitle.style.marginBottom = 10;
-            section.Add(sectionTitle);
-
-            currentBalanceLabel = CreateInfoLabel("Current Balance: $0");
-            quarterlyPaymentLabel = CreateInfoLabel("Quarterly Payment: $0");
-            daysUntilPaymentLabel = CreateInfoLabel("Days Until Payment: 0");
-            projectedBalanceLabel = CreateInfoLabel("Projected Balance (with interest): $0");
-            debtStateLabel = CreateInfoLabel("State: Active");
-
-            section.Add(currentBalanceLabel);
-            section.Add(quarterlyPaymentLabel);
-            section.Add(daysUntilPaymentLabel);
-            section.Add(projectedBalanceLabel);
-            section.Add(debtStateLabel);
-
-            return section;
-        }
-
-        private VisualElement CreatePaymentSection()
-        {
-            var section = new VisualElement();
-            section.name = "payment-section";
-            section.style.marginBottom = 20;
-            section.style.paddingTop = new StyleLength(15);
-            section.style.paddingBottom = new StyleLength(15);
-            section.style.paddingLeft = new StyleLength(15);
-            section.style.paddingRight = new StyleLength(15);
-            section.style.backgroundColor = new StyleColor(new Color(0.15f, 0.15f, 0.15f, 1f));
-
-            var sectionTitle = new Label("Make Manual Payment");
-            sectionTitle.style.fontSize = 18;
-            sectionTitle.style.marginBottom = 10;
-            section.Add(sectionTitle);
-
-            paymentAmountField = new TextField("Payment Amount");
-            paymentAmountField.style.marginBottom = 10;
-            section.Add(paymentAmountField);
-
-            manualPaymentButton = new Button { text = "Pay Debt" };
-            manualPaymentButton.style.height = 40;
-            section.Add(manualPaymentButton);
-
-            return section;
-        }
-
-        private VisualElement CreateHistorySection()
-        {
-            var section = new VisualElement();
-            section.name = "history-section";
-            section.style.paddingTop = new StyleLength(15);
-            section.style.paddingBottom = new StyleLength(15);
-            section.style.paddingLeft = new StyleLength(15);
-            section.style.paddingRight = new StyleLength(15);
-            section.style.backgroundColor = new StyleColor(new Color(0.15f, 0.15f, 0.15f, 1f));
-
-            var sectionTitle = new Label("Payment History");
-            sectionTitle.style.fontSize = 18;
-            sectionTitle.style.marginBottom = 10;
-            section.Add(sectionTitle);
-
-            paymentHistoryScrollView = new ScrollView();
-            paymentHistoryScrollView.style.height = 200;
-            paymentHistoryContainer = new VisualElement();
-            paymentHistoryScrollView.Add(paymentHistoryContainer);
-            section.Add(paymentHistoryScrollView);
-
-            return section;
-        }
-
-        private Label CreateInfoLabel(string text)
-        {
-            var label = new Label(text);
-            label.style.fontSize = 14;
-            label.style.marginBottom = 5;
-            return label;
-        }
-
         private void OnManualPaymentClicked()
         {
-            if (int.TryParse(paymentAmountField.value, out int amount))
+            if (paymentAmountField == null) return;
+
+            if (int.TryParse(paymentAmountField.text, out int amount))
             {
                 if (amount > 0)
                 {
@@ -219,7 +92,7 @@ namespace GuildReceptionist
                     if (success)
                     {
                         Debug.Log($"Manual payment of ${amount} successful");
-                        paymentAmountField.value = "";
+                        paymentAmountField.text = "";
                     }
                     else
                     {
@@ -291,15 +164,15 @@ namespace GuildReceptionist
                 // Color code based on state
                 if (debt.state == DebtState.Paid)
                 {
-                    debtStateLabel.style.color = new StyleColor(Color.green);
+                    debtStateLabel.color = Color.green;
                 }
                 else if (debt.state == DebtState.Overdue)
                 {
-                    debtStateLabel.style.color = new StyleColor(Color.red);
+                    debtStateLabel.color = Color.red;
                 }
                 else
                 {
-                    debtStateLabel.style.color = new StyleColor(Color.white);
+                    debtStateLabel.color = Color.white;
                 }
             }
 
@@ -311,15 +184,22 @@ namespace GuildReceptionist
         {
             if (paymentHistoryContainer == null) return;
 
-            paymentHistoryContainer.Clear();
+            // Clear existing items
+            foreach (Transform child in paymentHistoryContainer)
+            {
+                Destroy(child.gameObject);
+            }
 
             var history = DebtService.Instance.GetPaymentHistory();
             if (history == null || history.Count == 0)
             {
-                var noHistoryLabel = new Label("No payment history yet");
-                noHistoryLabel.style.fontSize = 12;
-                noHistoryLabel.style.color = new StyleColor(Color.gray);
-                paymentHistoryContainer.Add(noHistoryLabel);
+                // Create "no history" text if needed
+                GameObject noHistoryObj = new GameObject("NoHistoryText");
+                noHistoryObj.transform.SetParent(paymentHistoryContainer, false);
+                TMP_Text noHistoryText = noHistoryObj.AddComponent<TMP_Text>();
+                noHistoryText.text = "No payment history yet";
+                noHistoryText.fontSize = 14;
+                noHistoryText.color = Color.gray;
                 return;
             }
 
@@ -327,32 +207,49 @@ namespace GuildReceptionist
             for (int i = history.Count - 1; i >= 0; i--)
             {
                 var record = history[i];
-                var recordElement = new VisualElement();
-                recordElement.style.flexDirection = FlexDirection.Row;
-                recordElement.style.marginBottom = 5;
-                recordElement.style.paddingTop = new StyleLength(5);
-                recordElement.style.paddingBottom = new StyleLength(5);
-                recordElement.style.paddingLeft = new StyleLength(5);
-                recordElement.style.paddingRight = new StyleLength(5);
-                recordElement.style.backgroundColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 1f));
+                CreatePaymentHistoryItem(record);
+            }
+        }
 
-                var dateLabel = new Label(record.date.ToString("yyyy-MM-dd HH:mm"));
-                dateLabel.style.width = 150;
-                dateLabel.style.fontSize = 12;
+        private void CreatePaymentHistoryItem(PaymentRecord record)
+        {
+            GameObject item;
 
-                var amountLabel = new Label($"${record.amount:N0}");
-                amountLabel.style.width = 100;
-                amountLabel.style.fontSize = 12;
-                amountLabel.style.color = new StyleColor(Color.green);
+            if (paymentHistoryItemPrefab != null)
+            {
+                item = Instantiate(paymentHistoryItemPrefab, paymentHistoryContainer);
+            }
+            else
+            {
+                // Create item programmatically if no prefab
+                item = new GameObject("PaymentHistoryItem");
+                item.transform.SetParent(paymentHistoryContainer, false);
 
-                var balanceLabel = new Label($"Balance: ${record.remainingBalance:N0}");
-                balanceLabel.style.fontSize = 12;
+                var layoutGroup = item.AddComponent<HorizontalLayoutGroup>();
+                layoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                layoutGroup.spacing = 10f;
 
-                recordElement.Add(dateLabel);
-                recordElement.Add(amountLabel);
-                recordElement.Add(balanceLabel);
+                // Date
+                GameObject dateObj = new GameObject("Date");
+                dateObj.transform.SetParent(item.transform, false);
+                TMP_Text dateText = dateObj.AddComponent<TMP_Text>();
+                dateText.text = record.date.ToString("yyyy-MM-dd HH:mm");
+                dateText.fontSize = 14;
 
-                paymentHistoryContainer.Add(recordElement);
+                // Amount
+                GameObject amountObj = new GameObject("Amount");
+                amountObj.transform.SetParent(item.transform, false);
+                TMP_Text amountText = amountObj.AddComponent<TMP_Text>();
+                amountText.text = $"${record.amount:N0}";
+                amountText.fontSize = 14;
+                amountText.color = Color.green;
+
+                // Remaining Balance
+                GameObject balanceObj = new GameObject("Balance");
+                balanceObj.transform.SetParent(item.transform, false);
+                TMP_Text balanceText = balanceObj.AddComponent<TMP_Text>();
+                balanceText.text = $"Balance: ${record.remainingBalance:N0}";
+                balanceText.fontSize = 14;
             }
         }
 
@@ -361,10 +258,7 @@ namespace GuildReceptionist
         /// </summary>
         public void SetVisible(bool visible)
         {
-            if (root != null)
-            {
-                root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-            }
+            gameObject.SetActive(visible);
         }
     }
 }

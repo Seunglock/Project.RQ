@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
+using TMPro;
 
 namespace GuildReceptionist
 {
@@ -15,18 +16,28 @@ namespace GuildReceptionist
         private MaterialService materialService;
         private GameManager gameManager;
 
-        // UI Elements
-        private VisualElement root;
-        private ListView inventoryListView;
-        private Label totalValueLabel;
-        private Label selectedMaterialLabel;
-        private Label materialDetailsLabel;
-        private Button combineButton;
-        private TextField combineQuantityField;
-        private Label combinationCostLabel;
-        private Label combinationValueLabel;
-        private ListView recipeListView;
-        private ListView craftableListView;
+        [Header("Inventory UI")]
+        [SerializeField] private Transform inventoryListContainer;
+        [SerializeField] private GameObject inventoryItemPrefab;
+        [SerializeField] private TMP_Text totalValueLabel;
+        [SerializeField] private ScrollRect inventoryScrollView;
+
+        [Header("Selected Material Details")]
+        [SerializeField] private TMP_Text selectedMaterialLabel;
+        [SerializeField] private TMP_Text materialDetailsLabel;
+        [SerializeField] private Transform recipeListContainer;
+        [SerializeField] private GameObject recipeItemPrefab;
+
+        [Header("Combination UI")]
+        [SerializeField] private TMP_InputField combineQuantityField;
+        [SerializeField] private Button combineButton;
+        [SerializeField] private TMP_Text combinationCostLabel;
+        [SerializeField] private TMP_Text combinationValueLabel;
+
+        [Header("Craftable Materials")]
+        [SerializeField] private Transform craftableListContainer;
+        [SerializeField] private GameObject craftableItemPrefab;
+        [SerializeField] private ScrollRect craftableScrollView;
 
         private List<Material> inventoryMaterials;
         private List<Material> craftableMaterials;
@@ -63,236 +74,41 @@ namespace GuildReceptionist
 
         private void SetupUI()
         {
-            var uiDocument = GetComponent<UIDocument>();
-            if (uiDocument == null)
-            {
-                Debug.LogError("UIDocument component not found");
-                return;
-            }
-
-            root = uiDocument.rootVisualElement;
-
-            // Get UI elements
-            inventoryListView = root.Q<ListView>("InventoryList");
-            totalValueLabel = root.Q<Label>("TotalValueLabel");
-            selectedMaterialLabel = root.Q<Label>("SelectedMaterialLabel");
-            materialDetailsLabel = root.Q<Label>("MaterialDetailsLabel");
-            combineButton = root.Q<Button>("CombineButton");
-            combineQuantityField = root.Q<TextField>("CombineQuantityField");
-            combinationCostLabel = root.Q<Label>("CombinationCostLabel");
-            combinationValueLabel = root.Q<Label>("CombinationValueLabel");
-            recipeListView = root.Q<ListView>("RecipeList");
-            craftableListView = root.Q<ListView>("CraftableList");
-
-            // Setup inventory ListView
-            if (inventoryListView != null)
-            {
-                inventoryListView.makeItem = MakeInventoryItem;
-                inventoryListView.bindItem = BindInventoryItem;
-                inventoryListView.onSelectionChange += OnInventoryItemSelected;
-            }
-
-            // Setup craftable ListView
-            if (craftableListView != null)
-            {
-                craftableListView.makeItem = MakeCraftableItem;
-                craftableListView.bindItem = BindCraftableItem;
-                craftableListView.onSelectionChange += OnCraftableItemSelected;
-            }
-
-            // Setup recipe ListView
-            if (recipeListView != null)
-            {
-                recipeListView.makeItem = MakeRecipeItem;
-                recipeListView.bindItem = BindRecipeItem;
-            }
-
             // Setup combine quantity field
             if (combineQuantityField != null)
             {
-                combineQuantityField.value = "1";
-                combineQuantityField.RegisterValueChangedCallback(OnCombineQuantityChanged);
+                combineQuantityField.text = "1";
+                combineQuantityField.onValueChanged.AddListener(OnCombineQuantityChanged);
             }
 
             // Setup combine button
             if (combineButton != null)
             {
-                combineButton.clicked += OnCombineClicked;
+                combineButton.onClick.AddListener(OnCombineClicked);
             }
 
             Debug.Log("MaterialInventoryUI setup complete");
-        }
-
-        private VisualElement MakeInventoryItem()
-        {
-            var container = new VisualElement();
-            container.AddToClassList("inventory-item");
-
-            var nameLabel = new Label();
-            nameLabel.name = "NameLabel";
-            nameLabel.AddToClassList("material-name");
-
-            var quantityLabel = new Label();
-            quantityLabel.name = "QuantityLabel";
-            quantityLabel.AddToClassList("material-quantity");
-
-            var valueLabel = new Label();
-            valueLabel.name = "ValueLabel";
-            valueLabel.AddToClassList("material-value");
-
-            container.Add(nameLabel);
-            container.Add(quantityLabel);
-            container.Add(valueLabel);
-
-            return container;
-        }
-
-        private void BindInventoryItem(VisualElement element, int index)
-        {
-            if (inventoryMaterials == null || index >= inventoryMaterials.Count)
-                return;
-
-            Material material = inventoryMaterials[index];
-
-            var nameLabel = element.Q<Label>("NameLabel");
-            var quantityLabel = element.Q<Label>("QuantityLabel");
-            var valueLabel = element.Q<Label>("ValueLabel");
-
-            if (nameLabel != null)
-                nameLabel.text = material.name;
-
-            if (quantityLabel != null)
-                quantityLabel.text = $"x{material.quantity}";
-
-            if (valueLabel != null)
-            {
-                int totalValue = material.currentValue * material.quantity;
-                valueLabel.text = $"{totalValue}g";
-            }
-        }
-
-        private VisualElement MakeCraftableItem()
-        {
-            var container = new VisualElement();
-            container.AddToClassList("craftable-item");
-
-            var nameLabel = new Label();
-            nameLabel.name = "NameLabel";
-
-            var rarityLabel = new Label();
-            rarityLabel.name = "RarityLabel";
-
-            var valueLabel = new Label();
-            valueLabel.name = "ValueLabel";
-
-            container.Add(nameLabel);
-            container.Add(rarityLabel);
-            container.Add(valueLabel);
-
-            return container;
-        }
-
-        private void BindCraftableItem(VisualElement element, int index)
-        {
-            if (craftableMaterials == null || index >= craftableMaterials.Count)
-                return;
-
-            Material material = craftableMaterials[index];
-
-            var nameLabel = element.Q<Label>("NameLabel");
-            var rarityLabel = element.Q<Label>("RarityLabel");
-            var valueLabel = element.Q<Label>("ValueLabel");
-
-            if (nameLabel != null)
-                nameLabel.text = material.name;
-
-            if (rarityLabel != null)
-                rarityLabel.text = material.rarity.ToString();
-
-            if (valueLabel != null)
-                valueLabel.text = $"{material.currentValue}g";
-        }
-
-        private VisualElement MakeRecipeItem()
-        {
-            var container = new VisualElement();
-            container.AddToClassList("recipe-item");
-
-            var label = new Label();
-            label.name = "RecipeLabel";
-
-            container.Add(label);
-            return container;
-        }
-
-        private void BindRecipeItem(VisualElement element, int index)
-        {
-            if (selectedMaterial == null || selectedMaterial.combinationRecipe == null)
-                return;
-
-            var recipeEntries = selectedMaterial.combinationRecipe.ToList();
-            if (index >= recipeEntries.Count)
-                return;
-
-            var ingredient = recipeEntries[index];
-            var label = element.Q<Label>("RecipeLabel");
-
-            if (label != null)
-            {
-                // Get material name from registry
-                Material ingredientMaterial = materialService.GetMaterial(ingredient.Key);
-                string materialName = ingredientMaterial != null ? ingredientMaterial.name : ingredient.Key;
-                
-                int owned = materialService.GetMaterialQuantity(ingredient.Key);
-                int required = ingredient.Value;
-                
-                label.text = $"{materialName}: {owned}/{required}";
-                
-                // Color code based on availability
-                if (owned >= required)
-                {
-                    label.style.color = Color.green;
-                }
-                else
-                {
-                    label.style.color = Color.red;
-                }
-            }
         }
 
         #endregion
 
         #region Event Handlers
 
-        private void OnInventoryItemSelected(IEnumerable<object> selection)
+        private void OnInventoryItemSelected(Material material)
         {
-            foreach (var item in selection)
-            {
-                if (item is Material material)
-                {
-                    selectedMaterial = material;
-                    UpdateSelectedMaterialDisplay();
-                    break;
-                }
-            }
+            selectedMaterial = material;
+            UpdateSelectedMaterialDisplay();
         }
 
-        private void OnCraftableItemSelected(IEnumerable<object> selection)
+        private void OnCraftableItemSelected(Material material)
         {
-            foreach (var item in selection)
-            {
-                if (item is Material material)
-                {
-                    selectedMaterial = material;
-                    UpdateSelectedMaterialDisplay();
-                    break;
-                }
-            }
+            selectedMaterial = material;
+            UpdateSelectedMaterialDisplay();
         }
 
-        private void OnCombineQuantityChanged(ChangeEvent<string> evt)
+        private void OnCombineQuantityChanged(string value)
         {
-            if (int.TryParse(evt.newValue, out int quantity))
+            if (int.TryParse(value, out int quantity))
             {
                 combineQuantity = Mathf.Max(1, quantity);
                 UpdateCombinationDisplay();
@@ -339,6 +155,14 @@ namespace GuildReceptionist
 
         private void UpdateInventoryList()
         {
+            if (inventoryListContainer == null) return;
+
+            // Clear existing items
+            foreach (Transform child in inventoryListContainer)
+            {
+                Destroy(child.gameObject);
+            }
+
             var inventory = materialService.GetPlayerInventory();
             inventoryMaterials = inventory.Values
                 .Where(m => m.quantity > 0)
@@ -346,26 +170,135 @@ namespace GuildReceptionist
                 .ThenBy(m => m.name)
                 .ToList();
 
-            if (inventoryListView != null)
+            // Create inventory items
+            foreach (var material in inventoryMaterials)
             {
-                inventoryListView.itemsSource = inventoryMaterials;
-                inventoryListView.Rebuild();
+                CreateInventoryItem(material);
             }
 
             Debug.Log($"Updated inventory: {inventoryMaterials.Count} materials");
         }
 
+        private void CreateInventoryItem(Material material)
+        {
+            GameObject item;
+
+            if (inventoryItemPrefab != null)
+            {
+                item = Instantiate(inventoryItemPrefab, inventoryListContainer);
+            }
+            else
+            {
+                // Create item programmatically
+                item = new GameObject("InventoryItem");
+                item.transform.SetParent(inventoryListContainer, false);
+
+                var layoutGroup = item.AddComponent<HorizontalLayoutGroup>();
+                layoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                layoutGroup.spacing = 10f;
+
+                // Name
+                GameObject nameObj = new GameObject("Name");
+                nameObj.transform.SetParent(item.transform, false);
+                TMP_Text nameText = nameObj.AddComponent<TMP_Text>();
+                nameText.text = material.name;
+                nameText.fontSize = 14;
+
+                // Quantity
+                GameObject quantityObj = new GameObject("Quantity");
+                quantityObj.transform.SetParent(item.transform, false);
+                TMP_Text quantityText = quantityObj.AddComponent<TMP_Text>();
+                quantityText.text = $"x{material.quantity}";
+                quantityText.fontSize = 14;
+
+                // Value
+                GameObject valueObj = new GameObject("Value");
+                valueObj.transform.SetParent(item.transform, false);
+                TMP_Text valueText = valueObj.AddComponent<TMP_Text>();
+                int totalValue = material.currentValue * material.quantity;
+                valueText.text = $"{totalValue}g";
+                valueText.fontSize = 14;
+                valueText.color = Color.yellow;
+            }
+
+            // Add button for selection
+            var button = item.GetComponent<Button>();
+            if (button == null)
+            {
+                button = item.AddComponent<Button>();
+            }
+            button.onClick.AddListener(() => OnInventoryItemSelected(material));
+        }
+
         private void UpdateCraftableList()
         {
+            if (craftableListContainer == null) return;
+
+            // Clear existing items
+            foreach (Transform child in craftableListContainer)
+            {
+                Destroy(child.gameObject);
+            }
+
             craftableMaterials = materialService.GetCraftableMaterials();
 
-            if (craftableListView != null)
+            // Create craftable items
+            foreach (var material in craftableMaterials)
             {
-                craftableListView.itemsSource = craftableMaterials;
-                craftableListView.Rebuild();
+                CreateCraftableItem(material);
             }
 
             Debug.Log($"Craftable materials: {craftableMaterials.Count}");
+        }
+
+        private void CreateCraftableItem(Material material)
+        {
+            GameObject item;
+
+            if (craftableItemPrefab != null)
+            {
+                item = Instantiate(craftableItemPrefab, craftableListContainer);
+            }
+            else
+            {
+                // Create item programmatically
+                item = new GameObject("CraftableItem");
+                item.transform.SetParent(craftableListContainer, false);
+
+                var layoutGroup = item.AddComponent<HorizontalLayoutGroup>();
+                layoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                layoutGroup.spacing = 10f;
+
+                // Name
+                GameObject nameObj = new GameObject("Name");
+                nameObj.transform.SetParent(item.transform, false);
+                TMP_Text nameText = nameObj.AddComponent<TMP_Text>();
+                nameText.text = material.name;
+                nameText.fontSize = 14;
+
+                // Rarity
+                GameObject rarityObj = new GameObject("Rarity");
+                rarityObj.transform.SetParent(item.transform, false);
+                TMP_Text rarityText = rarityObj.AddComponent<TMP_Text>();
+                rarityText.text = material.rarity.ToString();
+                rarityText.fontSize = 14;
+
+                // Value
+                GameObject valueObj = new GameObject("Value");
+                valueObj.transform.SetParent(item.transform, false);
+                TMP_Text valueText = valueObj.AddComponent<TMP_Text>();
+                valueText.text = $"{material.currentValue}g";
+                valueText.fontSize = 14;
+                valueText.color = Color.yellow;
+            }
+
+            // Add button for selection
+            var button = item.GetComponent<Button>();
+            if (button == null)
+            {
+                button = item.AddComponent<Button>();
+            }
+            button.onClick.AddListener(() => OnCraftableItemSelected(material));
         }
 
         private void UpdateTotalValue()
@@ -383,13 +316,13 @@ namespace GuildReceptionist
             {
                 if (selectedMaterialLabel != null)
                     selectedMaterialLabel.text = "No material selected";
-                
+
                 if (materialDetailsLabel != null)
                     materialDetailsLabel.text = "";
-                
+
                 if (combineButton != null)
-                    combineButton.SetEnabled(false);
-                
+                    combineButton.interactable = false;
+
                 return;
             }
 
@@ -416,14 +349,16 @@ namespace GuildReceptionist
             }
             else
             {
-                if (recipeListView != null)
+                if (recipeListContainer != null)
                 {
-                    recipeListView.itemsSource = null;
-                    recipeListView.Rebuild();
+                    foreach (Transform child in recipeListContainer)
+                    {
+                        Destroy(child.gameObject);
+                    }
                 }
-                
+
                 if (combineButton != null)
-                    combineButton.SetEnabled(false);
+                    combineButton.interactable = false;
             }
         }
 
@@ -432,10 +367,56 @@ namespace GuildReceptionist
             if (selectedMaterial == null || selectedMaterial.combinationRecipe == null)
                 return;
 
-            if (recipeListView != null)
+            if (recipeListContainer == null)
+                return;
+
+            // Clear existing recipe items
+            foreach (Transform child in recipeListContainer)
             {
-                recipeListView.itemsSource = selectedMaterial.combinationRecipe.ToList();
-                recipeListView.Rebuild();
+                Destroy(child.gameObject);
+            }
+
+            // Create recipe items
+            foreach (var ingredient in selectedMaterial.combinationRecipe)
+            {
+                CreateRecipeItem(ingredient.Key, ingredient.Value);
+            }
+        }
+
+        private void CreateRecipeItem(string materialId, int requiredQuantity)
+        {
+            GameObject item;
+
+            if (recipeItemPrefab != null)
+            {
+                item = Instantiate(recipeItemPrefab, recipeListContainer);
+            }
+            else
+            {
+                // Create item programmatically
+                item = new GameObject("RecipeItem");
+                item.transform.SetParent(recipeListContainer, false);
+
+                TMP_Text recipeText = item.AddComponent<TMP_Text>();
+                recipeText.fontSize = 14;
+
+                // Get material name from registry
+                Material ingredientMaterial = materialService.GetMaterial(materialId);
+                string materialName = ingredientMaterial != null ? ingredientMaterial.name : materialId;
+
+                int owned = materialService.GetMaterialQuantity(materialId);
+
+                recipeText.text = $"{materialName}: {owned}/{requiredQuantity}";
+
+                // Color code based on availability
+                if (owned >= requiredQuantity)
+                {
+                    recipeText.color = Color.green;
+                }
+                else
+                {
+                    recipeText.color = Color.red;
+                }
             }
         }
 
@@ -446,11 +427,11 @@ namespace GuildReceptionist
 
             // Calculate combination value
             int valueGained = materialService.CalculateCombinationValue(selectedMaterial.id, combineQuantity);
-            
+
             if (combinationValueLabel != null)
             {
                 combinationValueLabel.text = $"Value Gain: {valueGained}g";
-                combinationValueLabel.style.color = valueGained >= 0 ? Color.green : Color.red;
+                combinationValueLabel.color = valueGained >= 0 ? Color.green : Color.red;
             }
 
             // Check if can combine
@@ -461,16 +442,16 @@ namespace GuildReceptionist
             }
 
             bool canCombine = materialService.HasMaterials(scaledRequirements);
-            
+
             if (combineButton != null)
             {
-                combineButton.SetEnabled(canCombine);
+                combineButton.interactable = canCombine;
             }
 
             if (combinationCostLabel != null)
             {
                 combinationCostLabel.text = canCombine ? "Can craft" : "Insufficient materials";
-                combinationCostLabel.style.color = canCombine ? Color.green : Color.red;
+                combinationCostLabel.color = canCombine ? Color.green : Color.red;
             }
         }
 
@@ -525,7 +506,7 @@ namespace GuildReceptionist
         public void FilterByCategory(string category)
         {
             var inventory = materialService.GetPlayerInventory();
-            
+
             if (string.IsNullOrEmpty(category))
             {
                 inventoryMaterials = inventory.Values
@@ -541,11 +522,7 @@ namespace GuildReceptionist
                     .ToList();
             }
 
-            if (inventoryListView != null)
-            {
-                inventoryListView.itemsSource = inventoryMaterials;
-                inventoryListView.Rebuild();
-            }
+            UpdateInventoryList();
         }
 
         /// <summary>
@@ -554,7 +531,7 @@ namespace GuildReceptionist
         public void SortByValue(bool descending = true)
         {
             var inventory = materialService.GetPlayerInventory();
-            
+
             if (descending)
             {
                 inventoryMaterials = inventory.Values
@@ -570,11 +547,7 @@ namespace GuildReceptionist
                     .ToList();
             }
 
-            if (inventoryListView != null)
-            {
-                inventoryListView.itemsSource = inventoryMaterials;
-                inventoryListView.Rebuild();
-            }
+            UpdateInventoryList();
         }
 
         #endregion

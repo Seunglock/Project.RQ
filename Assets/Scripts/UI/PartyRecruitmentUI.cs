@@ -1,5 +1,6 @@
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
 
 namespace GuildReceptionist
@@ -9,13 +10,15 @@ namespace GuildReceptionist
     /// </summary>
     public class PartyRecruitmentUI : MonoBehaviour
     {
+        [Header("UI Elements")]
+        [SerializeField] private TMP_Text goldLabel;
+        [SerializeField] private Transform partyListContainer;
+        [SerializeField] private GameObject partyListItemPrefab;
+        [SerializeField] private Button refreshButton;
+        [SerializeField] private ScrollRect partyScrollView;
+
         private PartyService partyService;
         private GameManager gameManager;
-
-        private VisualElement rootElement;
-        private Label goldLabel;
-        private ListView partyListView;
-        private Button refreshButton;
 
         private void Awake()
         {
@@ -23,38 +26,34 @@ namespace GuildReceptionist
             gameManager = GameManager.Instance;
 
             // Subscribe to events
-            EventSystem.Instance.Subscribe<PartyRecruitedEvent>(OnPartyRecruited);
-            EventSystem.Instance.Subscribe<GoldChangedEvent>(OnGoldChanged);
+            if (EventSystem.Instance != null)
+            {
+                EventSystem.Instance.Subscribe<PartyRecruitedEvent>(OnPartyRecruited);
+                EventSystem.Instance.Subscribe<GoldChangedEvent>(OnGoldChanged);
+            }
+
+            // Setup button handlers
+            if (refreshButton != null)
+            {
+                refreshButton.onClick.AddListener(RefreshPartyList);
+            }
+        }
+
+        private void Start()
+        {
+            // Initial refresh
+            RefreshPartyList();
+            UpdateGoldDisplay();
         }
 
         private void OnDestroy()
         {
             // Unsubscribe from events
-            EventSystem.Instance.Unsubscribe<PartyRecruitedEvent>(OnPartyRecruited);
-            EventSystem.Instance.Unsubscribe<GoldChangedEvent>(OnGoldChanged);
-        }
-
-        /// <summary>
-        /// Initialize UI elements
-        /// </summary>
-        public void InitializeUI(VisualElement root)
-        {
-            rootElement = root;
-
-            // Get UI elements
-            goldLabel = rootElement.Q<Label>("GoldLabel");
-            partyListView = rootElement.Q<ListView>("AvailablePartiesList");
-            refreshButton = rootElement.Q<Button>("RefreshButton");
-
-            // Setup button handlers
-            if (refreshButton != null)
+            if (EventSystem.Instance != null)
             {
-                refreshButton.clicked += RefreshPartyList;
+                EventSystem.Instance.Unsubscribe<PartyRecruitedEvent>(OnPartyRecruited);
+                EventSystem.Instance.Unsubscribe<GoldChangedEvent>(OnGoldChanged);
             }
-
-            // Initial refresh
-            RefreshPartyList();
-            UpdateGoldDisplay();
         }
 
         /// <summary>
@@ -62,15 +61,22 @@ namespace GuildReceptionist
         /// </summary>
         private void RefreshPartyList()
         {
-            if (partyListView == null) return;
+            if (partyListContainer == null) return;
+
+            // Clear existing items
+            foreach (Transform child in partyListContainer)
+            {
+                Destroy(child.gameObject);
+            }
 
             // Get available parties for recruitment
             var availableParties = GenerateRecruitmentOptions();
 
-            partyListView.itemsSource = availableParties;
-            partyListView.makeItem = MakePartyListItem;
-            partyListView.bindItem = BindPartyListItem;
-            partyListView.Rebuild();
+            // Create party items
+            foreach (var option in availableParties)
+            {
+                CreatePartyListItem(option);
+            }
         }
 
         /// <summary>
@@ -102,63 +108,74 @@ namespace GuildReceptionist
         /// <summary>
         /// Create a list item visual element
         /// </summary>
-        private VisualElement MakePartyListItem()
+        private void CreatePartyListItem(PartyRecruitmentOption option)
         {
-            var container = new VisualElement();
-            container.style.flexDirection = FlexDirection.Row;
-            container.style.justifyContent = Justify.SpaceBetween;
-            container.style.paddingBottom = 5;
-            container.style.paddingTop = 5;
+            GameObject item;
 
-            var infoContainer = new VisualElement();
-            var nameLabel = new Label();
-            nameLabel.name = "PartyName";
-            var statsLabel = new Label();
-            statsLabel.name = "PartyStats";
-            var costLabel = new Label();
-            costLabel.name = "PartyCost";
-
-            infoContainer.Add(nameLabel);
-            infoContainer.Add(statsLabel);
-            infoContainer.Add(costLabel);
-
-            var recruitButton = new Button();
-            recruitButton.name = "RecruitButton";
-            recruitButton.text = "Recruit";
-
-            container.Add(infoContainer);
-            container.Add(recruitButton);
-
-            return container;
-        }
-
-        /// <summary>
-        /// Bind data to a list item
-        /// </summary>
-        private void BindPartyListItem(VisualElement element, int index)
-        {
-            var options = partyListView.itemsSource as List<PartyRecruitmentOption>;
-            if (options == null || index >= options.Count) return;
-
-            var option = options[index];
-
-            var nameLabel = element.Q<Label>("PartyName");
-            var statsLabel = element.Q<Label>("PartyStats");
-            var costLabel = element.Q<Label>("PartyCost");
-            var recruitButton = element.Q<Button>("RecruitButton");
-
-            if (nameLabel != null)
-                nameLabel.text = option.name;
-
-            if (statsLabel != null)
-                statsLabel.text = $"Exp: {option.explorationStat} | Combat: {option.combatStat} | Admin: {option.adminStat}";
-
-            if (costLabel != null)
-                costLabel.text = $"Cost: {option.cost} gold";
-
-            if (recruitButton != null)
+            if (partyListItemPrefab != null)
             {
-                recruitButton.clicked += () => RecruitParty(option);
+                item = Instantiate(partyListItemPrefab, partyListContainer);
+            }
+            else
+            {
+                // Create item programmatically
+                item = new GameObject("PartyListItem");
+                item.transform.SetParent(partyListContainer, false);
+
+                var layoutGroup = item.AddComponent<HorizontalLayoutGroup>();
+                layoutGroup.childAlignment = TextAnchor.MiddleLeft;
+                layoutGroup.spacing = 10f;
+                layoutGroup.childForceExpandWidth = false;
+                layoutGroup.childForceExpandHeight = false;
+
+                // Info Container
+                GameObject infoContainer = new GameObject("InfoContainer");
+                infoContainer.transform.SetParent(item.transform, false);
+
+                var infoLayout = infoContainer.AddComponent<VerticalLayoutGroup>();
+                infoLayout.spacing = 5f;
+
+                // Name
+                GameObject nameObj = new GameObject("PartyName");
+                nameObj.transform.SetParent(infoContainer.transform, false);
+                TMP_Text nameText = nameObj.AddComponent<TMP_Text>();
+                nameText.text = option.name;
+                nameText.fontSize = 16;
+                nameText.fontStyle = FontStyles.Bold;
+
+                // Stats
+                GameObject statsObj = new GameObject("PartyStats");
+                statsObj.transform.SetParent(infoContainer.transform, false);
+                TMP_Text statsText = statsObj.AddComponent<TMP_Text>();
+                statsText.text = $"Exp: {option.explorationStat} | Combat: {option.combatStat} | Admin: {option.adminStat}";
+                statsText.fontSize = 14;
+
+                // Cost
+                GameObject costObj = new GameObject("PartyCost");
+                costObj.transform.SetParent(infoContainer.transform, false);
+                TMP_Text costText = costObj.AddComponent<TMP_Text>();
+                costText.text = $"Cost: {option.cost} gold";
+                costText.fontSize = 14;
+                costText.color = Color.yellow;
+
+                // Recruit Button
+                GameObject buttonObj = new GameObject("RecruitButton");
+                buttonObj.transform.SetParent(item.transform, false);
+                Button recruitButton = buttonObj.AddComponent<Button>();
+
+                // Button background
+                Image buttonImage = buttonObj.AddComponent<Image>();
+                buttonImage.color = new Color(0.2f, 0.6f, 0.2f);
+
+                // Button text
+                GameObject buttonTextObj = new GameObject("ButtonText");
+                buttonTextObj.transform.SetParent(buttonObj.transform, false);
+                TMP_Text buttonText = buttonTextObj.AddComponent<TMP_Text>();
+                buttonText.text = "Recruit";
+                buttonText.fontSize = 14;
+                buttonText.alignment = TextAlignmentOptions.Center;
+
+                recruitButton.onClick.AddListener(() => RecruitParty(option));
             }
         }
 
