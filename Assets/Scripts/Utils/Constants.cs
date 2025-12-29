@@ -39,6 +39,8 @@ namespace GuildReceptionist
         // Relationships
         public const int MIN_RELATIONSHIP = -100;
         public const int MAX_RELATIONSHIP = 100;
+        public const int HIGH_RELATIONSHIP_THRESHOLD = 80;
+        public const int LOW_RELATIONSHIP_THRESHOLD = -80;
 
         // Debt
         public const int DAYS_PER_QUARTER = 90;
