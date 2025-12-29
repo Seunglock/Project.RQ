@@ -24,8 +24,8 @@ namespace GuildReceptionist.Tests
             gameManager = go.AddComponent<GameManager>();
             gameManager.StartNewGame(); // Initialize game state
 
-            // Initialize PartyService
-            partyService = new PartyService();
+            // Initialize PartyService with explicit GameManager
+            partyService = new PartyService(gameManager);
         }
 
         [TearDown]

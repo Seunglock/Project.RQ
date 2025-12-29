@@ -373,17 +373,20 @@ namespace GuildReceptionist.Tests
             gameManager.ModifyGold(1000 - gameManager.PlayerGold); // Set gold to 1000
 
             // Act & Assert - Should not throw exceptions
+            LogAssert.Expect(LogType.Error, "Material invalid_id not found in registry");
             bool buyResult = materialService.BuyMaterial("invalid_id", 1);
             Assert.IsFalse(buyResult);
-            
+
+            LogAssert.Expect(LogType.Error, "Material invalid_id not in inventory");
             bool sellResult = materialService.SellMaterial("invalid_id", 1);
             Assert.IsFalse(sellResult);
-            
+
+            LogAssert.Expect(LogType.Error, "Material invalid_id not found in registry");
             bool combineResult = materialService.CombineMaterials("invalid_id", 1);
             Assert.IsFalse(combineResult);
-            
+
             yield return null;
-            
+
             Assert.AreEqual(1000, gameManager.PlayerGold); // Gold unchanged
         }
 

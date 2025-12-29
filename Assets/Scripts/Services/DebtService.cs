@@ -181,6 +181,14 @@ namespace GuildReceptionist
         }
 
         /// <summary>
+        /// Set debt (for testing purposes)
+        /// </summary>
+        public void SetDebt(Debt debt)
+        {
+            _currentDebt = debt;
+        }
+
+        /// <summary>
         /// Get current debt balance
         /// </summary>
         public int GetCurrentBalance()

@@ -19,6 +19,15 @@ namespace GuildReceptionist
         }
 
         /// <summary>
+        /// Constructor with explicit GameManager (for testing)
+        /// </summary>
+        public PartyService(GameManager manager)
+        {
+            parties = new List<Party>();
+            gameManager = manager;
+        }
+
+        /// <summary>
         /// Recruit a new party
         /// </summary>
         /// <param name="partyName">Name of the party</param>

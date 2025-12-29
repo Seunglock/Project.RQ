@@ -33,15 +33,20 @@ namespace GuildReceptionist.Tests
                 GameObject.DestroyImmediate(service.gameObject);
             }
 
+            // EventSystem is a singleton, just ensure it's initialized
+            EventSystem.Instance.Clear();
+
             // Create fresh instances
             gameManagerObject = new GameObject("GameManager");
             gameManager = gameManagerObject.AddComponent<GameManager>();
+            gameManager.StartNewGame(); // Initialize game state
 
             debtServiceObject = new GameObject("DebtService");
             debtService = debtServiceObject.AddComponent<DebtService>();
+            debtService.Initialize(); // Initialize debt service
 
-            // EventSystem is a singleton, just ensure it's initialized
-            EventSystem.Instance.Clear();
+            // Trigger GameStartedEvent to initialize debt
+            EventSystem.Instance.Publish(new GameStartedEvent());
         }
 
         [TearDown]
