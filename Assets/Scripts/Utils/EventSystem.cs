@@ -84,8 +84,12 @@ namespace GuildReceptionist
     }
     public struct QuestReadyEvent { public string QuestId; public int CurrentDay; }
     public struct QuestFailedEvent { public string QuestId; public string PartyId; }
-    public struct PartyRecruitedEvent { public string PartyId; public string PartyName; }
+    public struct PartyRecruitedEvent { public string PartyId; public string PartyName; public int Cost; }
     public struct PartyAvailabilityChangedEvent { public string PartyId; public bool IsAvailable; }
+    public struct PartyTrainedEvent { public string PartyId; public StatType StatType; public int OldValue; public int NewValue; public int Cost; }
+    public struct EquipmentPurchasedEvent { public string PartyId; public string EquipmentName; public int Cost; }
+    public struct PartyLoyaltyChangedEvent { public string PartyId; public int OldLoyalty; public int NewLoyalty; }
+    public struct PartyRemovedEvent { public string PartyId; }
     public struct MaterialTradedEvent { public string MaterialId; public int Quantity; public int TotalValue; }
     public struct DebtPaymentEvent { public int Amount; public int RemainingBalance; }
     public struct GameOverEvent { public string Reason; }
