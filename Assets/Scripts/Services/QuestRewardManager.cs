@@ -81,13 +81,24 @@ namespace GuildReceptionist
                         {
                             Debug.Log($"Material dropped: {materialReward.materialId} x{materialReward.quantity}");
 
-                            // TODO: Add to player's material inventory
-                            // This will be implemented in Phase 6 (User Story 4)
-                            EventSystem.Instance.Publish(new MaterialAcquiredEvent
+                            // Add to player's material inventory via MaterialService
+                            if (GameManager.Instance.materialService != null)
                             {
-                                MaterialId = materialReward.materialId,
-                                Quantity = materialReward.quantity
-                            });
+                                Material material = GameManager.Instance.materialService.GetMaterial(materialReward.materialId);
+                                if (material != null)
+                                {
+                                    GameManager.Instance.materialService.AddMaterial(material, materialReward.quantity);
+                                    Debug.Log($"Added {materialReward.quantity}x {material.name} to player inventory");
+                                }
+                                else
+                                {
+                                    Debug.LogWarning($"Material {materialReward.materialId} not found in registry");
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning("MaterialService not initialized");
+                            }
                         }
                         else
                         {
@@ -132,15 +143,6 @@ namespace GuildReceptionist
         public int GoldAwarded;
         public int ReputationChange;
         public int MaterialCount;
-    }
-
-    /// <summary>
-    /// Event fired when a material is acquired
-    /// </summary>
-    public struct MaterialAcquiredEvent
-    {
-        public string MaterialId;
-        public int Quantity;
     }
 
     #endregion

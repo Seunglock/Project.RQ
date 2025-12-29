@@ -29,12 +29,17 @@ namespace GuildReceptionist
         private float _currentDayTime = 0f;
 
         // Core services (will be initialized as needed)
+        public MaterialService materialService;
+
         public GameState CurrentGameState => _currentGameState;
         public bool IsGameRunning => _isGameRunning;
         public int CurrentDay => _currentGameState?.currentDay ?? 1;
         public int CurrentQuarter => _currentGameState?.currentQuarter ?? 1;
         public int PlayerGold => _currentGameState?.playerGold ?? 0;
         public int PlayerReputation => _currentGameState?.playerReputation ?? 0;
+
+        // Convenience property for gold access
+        public int gold => _currentGameState?.playerGold ?? 0;
 
         private void Awake()
         {
