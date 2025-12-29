@@ -358,16 +358,16 @@ public class EndingTracker
             return EndingType.ReputationEnding;
         }
 
-        // Balanced Ending: Paid debt but no dominant path
+        // Debt Victory: Basic win condition (paid debt but no special achievements)
         if (currentCondition.DebtPaidOff)
         {
-            currentCondition.EndingType = EndingType.BalancedEnding;
-            return EndingType.BalancedEnding;
+            currentCondition.EndingType = EndingType.DebtVictory;
+            return EndingType.DebtVictory;
         }
 
-        // Default: Debt Victory (basic win condition)
-        currentCondition.EndingType = EndingType.DebtVictory;
-        return EndingType.DebtVictory;
+        // Default: Balanced Ending (shouldn't normally reach here)
+        currentCondition.EndingType = EndingType.BalancedEnding;
+        return EndingType.BalancedEnding;
     }
 
     /// <summary>
