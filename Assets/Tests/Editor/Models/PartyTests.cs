@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using System.Collections.Generic;
 using GuildReceptionist;
 
@@ -50,7 +51,10 @@ namespace GuildReceptionist.Tests
         public void Party_IsValid_WithInvalidStats_ReturnsFalse(int invalidStatValue)
         {
             party.stats[StatType.Exploration] = invalidStatValue;
-            
+
+            // Expect error log
+            LogAssert.Expect(LogType.Error, $"Party {party.name}: Invalid stat value Exploration={invalidStatValue}");
+
             Assert.IsFalse(party.IsValid());
         }
 
@@ -60,7 +64,10 @@ namespace GuildReceptionist.Tests
         public void Party_IsValid_WithInvalidLoyalty_ReturnsFalse(int invalidLoyalty)
         {
             party.loyalty = invalidLoyalty;
-            
+
+            // Expect error log
+            LogAssert.Expect(LogType.Error, $"Party {party.name}: Invalid loyalty {invalidLoyalty}");
+
             Assert.IsFalse(party.IsValid());
         }
 

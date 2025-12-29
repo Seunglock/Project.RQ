@@ -2,6 +2,7 @@ using NUnit.Framework;
 using GuildReceptionist;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace GuildReceptionist.Tests
 {
@@ -47,6 +48,9 @@ namespace GuildReceptionist.Tests
             _quest.difficulty = invalidDifficulty;
             _quest.duration = 5;
 
+            // Expect error log
+            LogAssert.Expect(LogType.Error, $"Quest {_quest.id}: Invalid difficulty {invalidDifficulty}");
+
             // Act
             bool isValid = _quest.IsValid();
 
@@ -63,6 +67,9 @@ namespace GuildReceptionist.Tests
             _quest.difficulty = 3;
             _quest.duration = invalidDuration;
             _quest.requiredStats[StatType.Combat] = 30;
+
+            // Expect error log
+            LogAssert.Expect(LogType.Error, $"Quest {_quest.id}: Invalid duration {invalidDuration}");
 
             // Act
             bool isValid = _quest.IsValid();

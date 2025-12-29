@@ -2,6 +2,7 @@ using NUnit.Framework;
 using GuildReceptionist;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace GuildReceptionist.Tests
 {
@@ -73,6 +74,10 @@ namespace GuildReceptionist.Tests
                 difficulty = 10, // Invalid (> 5)
                 duration = 0 // Invalid (<= 0)
             };
+
+            // Expect error logs (both from Quest.IsValid and QuestService.AddQuest)
+            LogAssert.Expect(LogType.Error, $"Quest {invalidQuest.id}: Invalid difficulty 10");
+            LogAssert.Expect(LogType.Error, $"Quest {invalidQuest.id} failed validation");
 
             // Act
             bool result = _questService.AddQuest(invalidQuest);
@@ -172,6 +177,9 @@ namespace GuildReceptionist.Tests
         [Test]
         public void QuestService_AssignQuest_WithInvalidQuestId_Fails()
         {
+            // Expect error log
+            LogAssert.Expect(LogType.Error, "Quest invalid-id not found");
+
             // Act
             bool result = _questService.AssignQuest("invalid-id", _testParty);
 
@@ -184,6 +192,9 @@ namespace GuildReceptionist.Tests
         {
             // Arrange
             _questService.AddQuest(_testQuest);
+
+            // Expect error log
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "Party cannot be null");
 
             // Act
             bool result = _questService.AssignQuest(_testQuest.id, null);

@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using GuildReceptionist;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace GuildReceptionist.Tests
 {
@@ -57,6 +59,9 @@ namespace GuildReceptionist.Tests
             var material = new Material("Silver Ore", MaterialRarity.Uncommon, 50);
             material.quantity = -1;
 
+            // Expect error log
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, $"Material {material.name}: Invalid quantity -1");
+
             // Act
             bool isValid = material.IsValid();
 
@@ -69,7 +74,10 @@ namespace GuildReceptionist.Tests
         {
             // Arrange
             var material = new Material("Copper Ore", MaterialRarity.Common, 5);
-            material.baseValue = -10;
+            material.baseValue = -100;
+
+            // Expect error log
+            LogAssert.Expect(LogType.Error, "Material Copper Ore: Invalid value");
 
             // Act
             bool isValid = material.IsValid();

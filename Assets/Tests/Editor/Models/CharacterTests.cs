@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using GuildReceptionist;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace GuildReceptionist.Tests
 {
@@ -46,6 +48,9 @@ namespace GuildReceptionist.Tests
             var character = new Character("TestNPC", CharacterType.NPC);
             character.stats[StatType.Charisma] = 0; // Below MIN_STAT_VALUE (1)
 
+            // Expect error log
+            LogAssert.Expect(LogType.Error, "Character TestNPC: Invalid stat value Charisma=0");
+
             Assert.IsFalse(character.IsValid());
         }
 
@@ -54,6 +59,9 @@ namespace GuildReceptionist.Tests
         {
             var character = new Character("TestNPC", CharacterType.NPC);
             character.stats[StatType.Charisma] = 21; // Above MAX_STAT_VALUE (20)
+
+            // Expect error log
+            LogAssert.Expect(LogType.Error, "Character TestNPC: Invalid stat value Charisma=21");
 
             Assert.IsFalse(character.IsValid());
         }
@@ -75,6 +83,9 @@ namespace GuildReceptionist.Tests
             var character = new Character("TestNPC", CharacterType.NPC);
             character.relationships["npc1"] = -101; // Below MIN_RELATIONSHIP (-100)
 
+            // Expect error log
+            LogAssert.Expect(LogType.Error, "Character TestNPC: Invalid relationship value with npc1=-101");
+
             Assert.IsFalse(character.IsValid());
         }
 
@@ -83,6 +94,9 @@ namespace GuildReceptionist.Tests
         {
             var character = new Character("TestNPC", CharacterType.NPC);
             character.relationships["npc1"] = 101; // Above MAX_RELATIONSHIP (100)
+
+            // Expect error log
+            LogAssert.Expect(LogType.Error, "Character TestNPC: Invalid relationship value with npc1=101");
 
             Assert.IsFalse(character.IsValid());
         }
