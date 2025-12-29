@@ -30,6 +30,7 @@ namespace GuildReceptionist
 
         // Core services (will be initialized as needed)
         public MaterialService materialService;
+        public EndingTracker endingTracker;
 
         public GameState CurrentGameState => _currentGameState;
         public bool IsGameRunning => _isGameRunning;
@@ -57,20 +58,25 @@ namespace GuildReceptionist
         private void Initialize()
         {
             Debug.Log("GameManager initialized");
-            
+
             // Initialize platform-specific optimizations
             PlatformOptimizations.Initialize();
-            
+
             // Initialize performance manager
             var perfManager = PerformanceManager.Instance;
             Debug.Log($"Performance manager initialized for {PlatformOptimizations.GetPlatformName()}");
-            
+
             // Initialize event system
             EventSystem.Instance.Clear();
+
+            // Initialize ending tracker
+            endingTracker = new EndingTracker();
 
             // Subscribe to game events
             EventSystem.Instance.Subscribe<GameOverEvent>(OnGameOver);
             EventSystem.Instance.Subscribe<DebtPaymentEvent>(OnDebtPayment);
+            EventSystem.Instance.Subscribe<GoldChangedEvent>(OnGoldChangedForTracker);
+            EventSystem.Instance.Subscribe<ReputationChangedEvent>(OnReputationChangedForTracker);
         }
 
         /// <summary>
@@ -112,8 +118,22 @@ namespace GuildReceptionist
             _isGameRunning = true;
             _currentDayTime = 0f;
 
+            // Reset ending tracker for new game
+            if (endingTracker != null)
+            {
+                endingTracker.Reset();
+            }
+
             Debug.Log("New game started");
             EventSystem.Instance.Publish(new GameStartedEvent { });
+        }
+
+        /// <summary>
+        /// Start new game (alias for StartNewGame)
+        /// </summary>
+        public void NewGame()
+        {
+            StartNewGame();
         }
 
         /// <summary>
@@ -235,6 +255,13 @@ namespace GuildReceptionist
         {
             _isGameRunning = false;
             Debug.Log($"Game Over: {evt.Reason}");
+
+            // Determine and display ending
+            if (endingTracker != null)
+            {
+                EndingType ending = endingTracker.DetermineEnding();
+                Debug.Log($"Ending reached: {ending}");
+            }
         }
 
         private void OnDebtPayment(DebtPaymentEvent evt)
@@ -242,6 +269,28 @@ namespace GuildReceptionist
             if (_currentGameState != null)
             {
                 _currentGameState.debtBalance = evt.RemainingBalance;
+
+                // Track debt paid off
+                if (endingTracker != null && evt.RemainingBalance <= 0)
+                {
+                    endingTracker.OnDebtPaidOff();
+                }
+            }
+        }
+
+        private void OnGoldChangedForTracker(GoldChangedEvent evt)
+        {
+            if (endingTracker != null)
+            {
+                endingTracker.OnGoldChanged(evt.NewTotal);
+            }
+        }
+
+        private void OnReputationChangedForTracker(ReputationChangedEvent evt)
+        {
+            if (endingTracker != null)
+            {
+                endingTracker.OnReputationChanged(evt.NewTotal);
             }
         }
 
@@ -249,6 +298,8 @@ namespace GuildReceptionist
         {
             EventSystem.Instance.Unsubscribe<GameOverEvent>(OnGameOver);
             EventSystem.Instance.Unsubscribe<DebtPaymentEvent>(OnDebtPayment);
+            EventSystem.Instance.Unsubscribe<GoldChangedEvent>(OnGoldChangedForTracker);
+            EventSystem.Instance.Unsubscribe<ReputationChangedEvent>(OnReputationChangedForTracker);
         }
     }
 
