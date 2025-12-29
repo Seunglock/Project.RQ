@@ -58,6 +58,13 @@ namespace GuildReceptionist
         {
             Debug.Log("GameManager initialized");
             
+            // Initialize platform-specific optimizations
+            PlatformOptimizations.Initialize();
+            
+            // Initialize performance manager
+            var perfManager = PerformanceManager.Instance;
+            Debug.Log($"Performance manager initialized for {PlatformOptimizations.GetPlatformName()}");
+            
             // Initialize event system
             EventSystem.Instance.Clear();
 
@@ -214,6 +221,11 @@ namespace GuildReceptionist
 
             // Update random event system
             RandomEventService.Instance.Update(Time.deltaTime);
+
+            // Check performance and apply graceful degradation if needed
+            float currentFPS = PerformanceManager.Instance.GetFPS();
+            float memoryUsage = PerformanceManager.Instance.GetMemoryUsageMB();
+            PlatformOptimizations.ApplyGracefulDegradation(currentFPS, memoryUsage);
 
             // Optional: Auto-advance day after certain time threshold
             // This can be enabled for testing or set to manual advancement
