@@ -46,6 +46,12 @@ namespace GuildReceptionist
         public const int DAYS_PER_QUARTER = 90;
         public const float DEFAULT_INTEREST_RATE = 0.05f; // 5% annual rate
 
+        // Starting values for new game
+        public const int STARTING_GOLD = 1000;
+        public const int STARTING_REPUTATION = 50;
+        public const int STARTING_DEBT = 10000;
+        public const int QUARTERLY_PAYMENT = 2500;
+
         // Save/Load
         public const string SAVE_FILE_NAME = "save.json";
         public const string SETTINGS_KEY_PREFIX = "GuildReceptionist_";

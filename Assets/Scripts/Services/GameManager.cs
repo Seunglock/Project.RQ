@@ -67,18 +67,41 @@ namespace GuildReceptionist
         }
 
         /// <summary>
+        /// Get current game state for saving
+        /// </summary>
+        public GameState GetGameState()
+        {
+            if (_currentGameState == null)
+            {
+                _currentGameState = SaveLoadManager.Instance.CreateDefaultGameState();
+            }
+            return _currentGameState;
+        }
+
+        /// <summary>
+        /// Set game state from loaded data
+        /// </summary>
+        public void SetGameState(GameState gameState)
+        {
+            _currentGameState = gameState;
+            _isGameRunning = true;
+            Debug.Log("Game state applied to GameManager");
+            EventSystem.Instance.Publish(new GameLoadedEvent { });
+        }
+
+        /// <summary>
         /// Start a new game with default state
         /// </summary>
         public void StartNewGame()
         {
-            _currentGameState = SaveLoadManager.Instance.LoadGame();
+            // Delete existing save if any
             if (SaveLoadManager.Instance.SaveFileExists())
             {
-                // Reset to default if we're starting a new game
                 SaveLoadManager.Instance.DeleteSave();
-                _currentGameState = SaveLoadManager.Instance.LoadGame();
             }
 
+            // Create new default game state
+            _currentGameState = SaveLoadManager.Instance.CreateDefaultGameState();
             _isGameRunning = true;
             _currentDayTime = 0f;
 
@@ -98,12 +121,18 @@ namespace GuildReceptionist
                 return;
             }
 
-            _currentGameState = SaveLoadManager.Instance.LoadGame();
-            _isGameRunning = true;
-            _currentDayTime = 0f;
-
-            Debug.Log("Game loaded");
-            EventSystem.Instance.Publish(new GameLoadedEvent { });
+            GameState loadedState = SaveLoadManager.Instance.LoadGameState();
+            if (loadedState != null)
+            {
+                SetGameState(loadedState);
+                _currentDayTime = 0f;
+                Debug.Log("Game loaded");
+            }
+            else
+            {
+                Debug.LogWarning("Failed to load game. Starting new game instead.");
+                StartNewGame();
+            }
         }
 
         /// <summary>
@@ -182,6 +211,9 @@ namespace GuildReceptionist
 
             // Track time for quest simulation
             _currentDayTime += Time.deltaTime;
+
+            // Update random event system
+            RandomEventService.Instance.Update(Time.deltaTime);
 
             // Optional: Auto-advance day after certain time threshold
             // This can be enabled for testing or set to manual advancement

@@ -15,6 +15,21 @@ namespace GuildReceptionist
         private string SaveFilePath => Path.Combine(Application.persistentDataPath, Constants.SAVE_FILE_NAME);
 
         /// <summary>
+        /// Save current game state to JSON file
+        /// </summary>
+        public bool SaveGame()
+        {
+            if (GameManager.Instance == null)
+            {
+                Debug.LogError("GameManager not found, cannot save game");
+                return false;
+            }
+
+            GameState gameState = GameManager.Instance.GetGameState();
+            return SaveGame(gameState);
+        }
+
+        /// <summary>
         /// Save game state to JSON file
         /// </summary>
         public bool SaveGame(GameState gameState)
@@ -34,16 +49,39 @@ namespace GuildReceptionist
         }
 
         /// <summary>
+        /// Load game state from JSON file and apply to GameManager
+        /// </summary>
+        public bool LoadGame()
+        {
+            GameState gameState = LoadGameState();
+            if (gameState == null)
+            {
+                Debug.LogWarning("Failed to load game state");
+                return false;
+            }
+
+            if (GameManager.Instance == null)
+            {
+                Debug.LogError("GameManager not found, cannot load game");
+                return false;
+            }
+
+            GameManager.Instance.SetGameState(gameState);
+            Debug.Log("Game loaded and applied to GameManager");
+            return true;
+        }
+
+        /// <summary>
         /// Load game state from JSON file
         /// </summary>
-        public GameState LoadGame()
+        public GameState LoadGameState()
         {
             try
             {
                 if (!File.Exists(SaveFilePath))
                 {
-                    Debug.LogWarning("No save file found, returning default game state");
-                    return CreateDefaultGameState();
+                    Debug.LogWarning("No save file found");
+                    return null;
                 }
 
                 string json = File.ReadAllText(SaveFilePath);
@@ -54,16 +92,24 @@ namespace GuildReceptionist
             catch (Exception e)
             {
                 Debug.LogError($"Failed to load game: {e.Message}");
-                return CreateDefaultGameState();
+                return null;
             }
         }
 
         /// <summary>
         /// Check if a save file exists
         /// </summary>
-        public bool SaveFileExists()
+        public bool SaveExists()
         {
             return File.Exists(SaveFilePath);
+        }
+
+        /// <summary>
+        /// Check if a save file exists (alternative name for backward compatibility)
+        /// </summary>
+        public bool SaveFileExists()
+        {
+            return SaveExists();
         }
 
         /// <summary>
@@ -108,16 +154,16 @@ namespace GuildReceptionist
         /// <summary>
         /// Create a default game state for new games
         /// </summary>
-        private GameState CreateDefaultGameState()
+        public GameState CreateDefaultGameState()
         {
             return new GameState
             {
                 currentDay = 1,
                 currentQuarter = 1,
-                playerGold = 1000,
-                playerReputation = 50,
-                debtBalance = 10000,
-                quarterlyPayment = 2500
+                playerGold = Constants.STARTING_GOLD,
+                playerReputation = Constants.STARTING_REPUTATION,
+                debtBalance = Constants.STARTING_DEBT,
+                quarterlyPayment = Constants.QUARTERLY_PAYMENT
             };
         }
     }
