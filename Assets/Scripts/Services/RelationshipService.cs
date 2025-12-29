@@ -126,6 +126,14 @@ namespace GuildReceptionist
         /// </summary>
         public void ProcessDialogueChoice(Character player, string npcId, DialogueChoice choice)
         {
+            ProcessDialogueChoice(player, npcId, choice, null);
+        }
+
+        /// <summary>
+        /// Process a dialogue choice made by the player with an explicit next node
+        /// </summary>
+        public void ProcessDialogueChoice(Character player, string npcId, DialogueChoice choice, DialogueNode nextNode)
+        {
             if (player == null || choice == null)
             {
                 Debug.LogError("RelationshipService: Player or choice is null");
@@ -155,8 +163,12 @@ namespace GuildReceptionist
             // Move to next dialogue node if specified
             if (!string.IsNullOrEmpty(choice.nextNodeId))
             {
-                // Note: In a full implementation, this would load the next node from a dialogue database
-                // For now, we just track that we should move to the next node
+                // If next node is provided, use it directly
+                if (nextNode != null && nextNode.id == choice.nextNodeId)
+                {
+                    currentDialogues[npcId] = nextNode;
+                }
+
                 EventSystem.Instance.Publish(new DialogueProgressEvent
                 {
                     NpcId = npcId,

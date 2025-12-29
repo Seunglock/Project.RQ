@@ -384,9 +384,9 @@ namespace GuildReceptionist.Tests
             // Act - Progress through dialogue
             relationshipService.StartDialogue(npc.id, node1);
             yield return null;
-            relationshipService.ProcessDialogueChoice(player, npc.id, choice1);
+            relationshipService.ProcessDialogueChoice(player, npc.id, choice1, node2);
             yield return null;
-            relationshipService.ProcessDialogueChoice(player, npc.id, choice2);
+            relationshipService.ProcessDialogueChoice(player, npc.id, choice2, node3);
             yield return null;
 
             // Assert

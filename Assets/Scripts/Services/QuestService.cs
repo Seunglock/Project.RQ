@@ -11,10 +11,12 @@ namespace GuildReceptionist
     public class QuestService
     {
         private Dictionary<string, Quest> _quests;
+        private Dictionary<string, Party> _assignedParties; // Track parties by quest ID
 
         public QuestService()
         {
             _quests = new Dictionary<string, Quest>();
+            _assignedParties = new Dictionary<string, Party>();
         }
 
         #region Quest Management
@@ -189,14 +191,17 @@ namespace GuildReceptionist
             {
                 party.isAvailable = false;
                 party.lastQuestDate = DateTime.Now;
-                
-                EventSystem.Instance.Publish(new QuestAssignedEvent 
-                { 
-                    QuestId = quest.id, 
+
+                // Track the party for this quest
+                _assignedParties[quest.id] = party;
+
+                EventSystem.Instance.Publish(new QuestAssignedEvent
+                {
+                    QuestId = quest.id,
                     PartyId = party.id,
                     EstimatedSuccessRate = CalculateSuccessRate(quest, party)
                 });
-                
+
                 return true;
             }
 
@@ -293,6 +298,13 @@ namespace GuildReceptionist
                 return false;
             }
 
+            // Get the assigned party from tracking dictionary
+            Party assignedParty = null;
+            if (_assignedParties.ContainsKey(questId))
+            {
+                assignedParty = _assignedParties[questId];
+            }
+
             // Transition to appropriate final state
             QuestState finalState = isSuccess ? QuestState.Completed : QuestState.Failed;
             if (!quest.TransitionTo(finalState))
@@ -300,9 +312,16 @@ namespace GuildReceptionist
                 return false;
             }
 
+            // Mark party as available again and remove from tracking
+            if (assignedParty != null)
+            {
+                assignedParty.isAvailable = true;
+                _assignedParties.Remove(questId);
+            }
+
             // Publish completion event
-            EventSystem.Instance.Publish(new QuestCompletedEvent 
-            { 
+            EventSystem.Instance.Publish(new QuestCompletedEvent
+            {
                 QuestId = quest.id,
                 PartyId = quest.assignedPartyId,
                 IsSuccess = isSuccess,

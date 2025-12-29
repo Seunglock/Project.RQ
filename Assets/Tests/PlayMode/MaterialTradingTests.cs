@@ -131,6 +131,7 @@ namespace GuildReceptionist.Tests
             materialService = new MaterialService(gameManager);
             gameManager.ModifyGold(100 - gameManager.PlayerGold); // Set gold to 100
             var ironOre = new Material("Iron Ore", MaterialRarity.Common, 10);
+            materialService.RegisterMaterial(ironOre); // Register material for market pricing
             materialService.AddMaterial(ironOre, 5);
 
             // Act
@@ -151,6 +152,7 @@ namespace GuildReceptionist.Tests
             materialService = new MaterialService(gameManager);
             gameManager.ModifyGold(100 - gameManager.PlayerGold); // Set gold to 100
             var ironOre = new Material("Iron Ore", MaterialRarity.Common, 10);
+            materialService.RegisterMaterial(ironOre); // Register material for market pricing
             materialService.AddMaterial(ironOre, 2);
 
             // Act
@@ -381,7 +383,7 @@ namespace GuildReceptionist.Tests
             bool sellResult = materialService.SellMaterial("invalid_id", 1);
             Assert.IsFalse(sellResult);
 
-            LogAssert.Expect(LogType.Error, "Material invalid_id not found in registry");
+            LogAssert.Expect(LogType.Error, "Target material invalid_id not found in registry");
             bool combineResult = materialService.CombineMaterials("invalid_id", 1);
             Assert.IsFalse(combineResult);
 

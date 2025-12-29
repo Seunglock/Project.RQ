@@ -207,22 +207,30 @@ namespace GuildReceptionist
                 return false;
             }
 
+            if (!materialRegistry.ContainsKey(materialId))
+            {
+                Debug.LogError($"Material {materialId} not found in registry");
+                return false;
+            }
+
             if (quantity <= 0)
             {
                 Debug.LogError("Invalid quantity");
                 return false;
             }
 
-            Material material = playerInventory[materialId];
-            
+            Material inventoryMaterial = playerInventory[materialId];
+            Material registryMaterial = materialRegistry[materialId];
+
             // Check if player has enough materials
-            if (material.quantity < quantity)
+            if (inventoryMaterial.quantity < quantity)
             {
-                Debug.LogWarning($"Insufficient materials to sell. Have {material.quantity}, trying to sell {quantity}");
+                Debug.LogWarning($"Insufficient materials to sell. Have {inventoryMaterial.quantity}, trying to sell {quantity}");
                 return false;
             }
 
-            int totalRevenue = material.currentValue * quantity;
+            // Use current market value from registry for selling price
+            int totalRevenue = registryMaterial.currentValue * quantity;
 
             // Remove material from inventory
             if (!RemoveMaterial(materialId, quantity))
@@ -236,12 +244,12 @@ namespace GuildReceptionist
             EventSystem.Instance.Publish(new MaterialSoldEvent
             {
                 MaterialId = materialId,
-                MaterialName = material.name,
+                MaterialName = inventoryMaterial.name,
                 Quantity = quantity,
                 TotalRevenue = totalRevenue
             });
 
-            Debug.Log($"Sold {quantity}x {material.name} for {totalRevenue} gold");
+            Debug.Log($"Sold {quantity}x {inventoryMaterial.name} for {totalRevenue} gold");
             return true;
         }
 

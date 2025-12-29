@@ -103,6 +103,9 @@ namespace GuildReceptionist.Tests
 
             yield return null;
 
+            // Expect the error log for insufficient funds
+            LogAssert.Expect(LogType.Error, "Insufficient gold for quarterly payment. Required: 2500, Available: 0");
+
             // Act
             for (int day = 1; day < Constants.DAYS_PER_QUARTER; day++)
             {
@@ -203,7 +206,8 @@ namespace GuildReceptionist.Tests
             // Arrange
             gameManager.StartNewGame();
             debtService.Initialize();
-            gameManager.ModifyGold(10000);
+            gameManager.ModifyGold(-gameManager.PlayerGold); // Reset to 0
+            gameManager.ModifyGold(10000); // Set to exactly 10000
 
             var initialBalance = debtService.GetCurrentDebt().currentBalance;
 
