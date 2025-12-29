@@ -67,8 +67,22 @@ namespace GuildReceptionist
     }
 
     // Common game events
-    public struct QuestAssignedEvent { public string QuestId; public string PartyId; }
-    public struct QuestCompletedEvent { public string QuestId; public bool Success; public int RewardGold; }
+    public struct QuestAddedEvent { public string QuestId; }
+    public struct QuestRemovedEvent { public string QuestId; }
+    public struct QuestAssignedEvent { public string QuestId; public string PartyId; public float EstimatedSuccessRate; }
+    public struct QuestUnassignedEvent { public string QuestId; public string PartyId; }
+    public struct QuestStartedEvent { public string QuestId; public int StartDay; public int ExpectedCompletionDay; }
+    public struct QuestCompletedEvent
+    {
+        public string QuestId;
+        public string PartyId;
+        public bool IsSuccess;
+        public int CompletionDay;
+        public int GoldReward;
+        public int ReputationChange;
+        public System.Collections.Generic.List<MaterialReward> MaterialRewards;
+    }
+    public struct QuestReadyEvent { public string QuestId; public int CurrentDay; }
     public struct QuestFailedEvent { public string QuestId; public string PartyId; }
     public struct PartyRecruitedEvent { public string PartyId; }
     public struct MaterialTradedEvent { public string MaterialId; public int Quantity; public int TotalValue; }

@@ -27,6 +27,9 @@ namespace GuildReceptionist
         public const int MIN_DIFFICULTY = 1;
         public const int MAX_DIFFICULTY = 5;
         public const int STAT_POINTS_PER_DIFFICULTY = 10;
+        public const int MIN_QUEST_DURATION = 3;
+        public const int MAX_QUEST_DURATION = 10;
+        public const int GOLD_PER_DIFFICULTY = 100;
 
         // Party loyalty
         public const int MIN_LOYALTY = 0;
